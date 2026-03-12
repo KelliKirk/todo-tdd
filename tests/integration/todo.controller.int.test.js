@@ -9,6 +9,7 @@ TodoModel.create = jest.fn()
 TodoModel.find = jest.fn()
 TodoModel.findById = jest.fn()
 TodoModel.findByIdAndUpdate = jest.fn()
+TodoModel.findByIdAndDelete = jest.fn()
 
 let firstTodo, newTodoId
 
@@ -55,6 +56,15 @@ describe(endpointUrl, () => {
     expect(res.body.title).toBe(newTodo.title)
     expect(res.body.done).toBe(newTodo.done)
 })
+
+    it("DELETE " + endpointUrl, async () => {
+    TodoModel.findByIdAndDelete.mockResolvedValue(newTodo)
+    const response = await request(app)
+        .delete(endpointUrl + newTodoId)
+    expect(response.statusCode).toBe(200)
+    expect(response.body.title).toBe(newTodo.title)
+    expect(response.body.done).toBe(newTodo.done)
+})
     it("GET todo by id doesnt exist " + endpointUrl + ":todoId", async () => {
     TodoModel.findById.mockResolvedValue(null)
     const response = await request(app)
@@ -75,6 +85,12 @@ describe(endpointUrl, () => {
     const response = await request(app)
         .put(endpointUrl + notExistingTodoId)
         .send(testData)
+    expect(response.statusCode).toBe(404)
+})
+    it("should return 404 on DELETE " + endpointUrl, async () => {
+    TodoModel.findByIdAndDelete.mockResolvedValue(null)
+    const response = await request(app)
+        .delete(endpointUrl + notExistingTodoId)
     expect(response.statusCode).toBe(404)
 })
 

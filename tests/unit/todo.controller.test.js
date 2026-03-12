@@ -8,6 +8,7 @@ TodoModel.create = jest.fn()
 TodoModel.find = jest.fn()
 TodoModel.findById = jest.fn()
 TodoModel.findByIdAndUpdate = jest.fn()
+TodoModel.findByIdAndDelete = jest.fn()
 
 const todoId = "69b2a183fa7253a81642001b"
 
@@ -115,7 +116,7 @@ describe('TodoController.updateTodo', () => {
         req.body = newTodo
         TodoModel.findByIdAndUpdate.mockReturnValue(newTodo)
         await TodoController.updateTodo(req, res, next)
-        expect(res._isEndCalled).toBeTruthy()
+        expect(res._isEndCalled()).toBeTruthy()
         expect(res.statusCode).toBe(200)
         expect(res._getJSONData()).toStrictEqual(newTodo)
     } )
@@ -132,4 +133,35 @@ describe('TodoController.updateTodo', () => {
         expect(res._isEndCalled).toBeTruthy()
     }  )
 } )
+
+describe('TodoController.deleteTodo', () => {
+    it('should have a deleteTodo() function', () => {
+        expect(typeof TodoController.deleteTodo).toBe("function")
+    })
+    it('should delete with TodoModel.findByIdAndDelete', async () => {
+        req.params.todoId = todoId
+        await TodoController.deleteTodo(req, res, next)
+        expect(TodoModel.findByIdAndDelete).toBeCalledWith(todoId)
+    })
+    it('should return a response with json data and http code 200', async () => {
+        req.params.todoId = todoId
+        TodoModel.findByIdAndDelete.mockResolvedValue(newTodo)
+        await TodoController.deleteTodo(req, res, next)
+        expect(res._isEndCalled()).toBeTruthy()
+        expect(res.statusCode).toBe(200)
+        expect(res._getJSONData()).toStrictEqual(newTodo)
+    })
+    it('should handle errors', async () => {
+        const errorMessage = { message: "error deleting todo" }
+        TodoModel.findByIdAndDelete.mockRejectedValue(errorMessage)
+        await TodoController.deleteTodo(req, res, next)
+        expect(next).toBeCalledWith(errorMessage)
+    })
+    it('should return 404 when item doesnt exist', async () => {
+        TodoModel.findByIdAndDelete.mockResolvedValue(null)
+        await TodoController.deleteTodo(req, res, next)
+        expect(res.statusCode).toBe(404)
+        expect(res._isEndCalled()).toBeTruthy()
+    })
+})
 
