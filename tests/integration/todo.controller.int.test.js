@@ -8,10 +8,16 @@ const allTodos = require("../mock-data/all-todos.json")
 TodoModel.create = jest.fn()
 TodoModel.find = jest.fn()
 TodoModel.findById = jest.fn()
+TodoModel.findByIdAndUpdate = jest.fn()
 
-let firstTodo
+let firstTodo, newTodoId
 
 describe(endpointUrl, () => {
+    const testData = {
+        title: "Make an integration test for PUT",
+        done: true
+    }
+    const notExistingTodoId = "69b2a193fa7263a81643001f"
     it("POST " + endpointUrl, async () => {
         TodoModel.create.mockResolvedValue(newTodo)
         const response = await request(app)
@@ -20,6 +26,7 @@ describe(endpointUrl, () => {
         expect(response.statusCode).toBe(201)
         expect(response.body.title).toBe(newTodo.title)
         expect(response.body.done).toBe(newTodo.done)
+        newTodoId = response.body._id
     })
     it("GET " + endpointUrl, async () => {
     TodoModel.find.mockResolvedValue(allTodos)
@@ -38,6 +45,16 @@ describe(endpointUrl, () => {
     expect(response.body.title).toBe(firstTodo.title)
     expect(response.body.done).toBe(firstTodo.done)
 })
+
+    it("PUT" + endpointUrl, async () => {
+    TodoModel.findByIdAndUpdate.mockResolvedValue(newTodo)
+    const res = await request(app)
+        .put(endpointUrl + newTodoId)
+        .send(testData)
+    expect(res.statusCode).toBe(200)
+    expect(res.body.title).toBe(newTodo.title)
+    expect(res.body.done).toBe(newTodo.done)
+})
     it("GET todo by id doesnt exist " + endpointUrl + ":todoId", async () => {
     TodoModel.findById.mockResolvedValue(null)
     const response = await request(app)
@@ -52,4 +69,13 @@ describe(endpointUrl, () => {
         expect(response.statusCode).toBe(500)
         expect(response.body).toStrictEqual({ message: "Todo validation failed: done: Path 'done' is required" })
     })
+
+    it("should return 404 on PUT " + endpointUrl, async () => {
+    TodoModel.findByIdAndUpdate.mockResolvedValue(null)
+    const response = await request(app)
+        .put(endpointUrl + notExistingTodoId)
+        .send(testData)
+    expect(response.statusCode).toBe(404)
+})
+
 })
