@@ -7,6 +7,9 @@ const allTodos = require("../mock-data/all-todos.json")
 
 TodoModel.create = jest.fn()
 TodoModel.find = jest.fn()
+TodoModel.findById = jest.fn()
+
+let firstTodo
 
 describe(endpointUrl, () => {
     it("POST " + endpointUrl, async () => {
@@ -25,6 +28,21 @@ describe(endpointUrl, () => {
     expect(Array.isArray(response.body)).toBeTruthy()
     expect(response.body[0].title).toBeDefined()
     expect(response.body[0].done).toBeDefined()
+    firstTodo = response.body[0] 
+})
+    it("GET by Id " + endpointUrl + ":todoId", async () => {
+    TodoModel.findById.mockResolvedValue(firstTodo)
+    const response = await request(app)
+        .get(endpointUrl + firstTodo._id)
+    expect(response.statusCode).toBe(200)
+    expect(response.body.title).toBe(firstTodo.title)
+    expect(response.body.done).toBe(firstTodo.done)
+})
+    it("GET todo by id doesnt exist " + endpointUrl + ":todoId", async () => {
+    TodoModel.findById.mockResolvedValue(null)
+    const response = await request(app)
+        .get(endpointUrl + "69b2a193fa7263a81643001f")
+    expect(response.statusCode).toBe(404)
 })
     it("should return error 500 on malformed data with POST" + endpointUrl, async () => {
         TodoModel.create.mockRejectedValue(new Error("Todo validation failed: done: Path 'done' is required"))
